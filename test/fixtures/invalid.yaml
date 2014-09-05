@@ -1,0 +1,4 @@
+somekey: [
+  - some value
+  - but no comma
+]
