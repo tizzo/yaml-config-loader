@@ -37,7 +37,7 @@ describe('yaml-config-loader', function() {
         done();
       });
     });
-    it('should override a second file with a ', function(done) {
+    it('should override a earlier files with later ones', function(done) {
       var loader = new Loader();
       loader.addFile(fixture('config1'))
             .addFile(fixture('config2'))

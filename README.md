@@ -19,10 +19,9 @@ Yet another configuration loader because I too am opinionated about how this sho
 
   var laoder = require('yaml-config-loader');
   var path = require('path');
-  loader.addFile(path.join(__dirname, 'defaults.config.yaml'));
+  loader.hddFile(path.join(__dirname, 'defaults.config.yaml'));
   loader.addFile(path.join(__dirname, 'config.yaml'));
   loader.addDirectory(path.join(__dirname, 'conf.d'));
-  loader.addDirectory(path.join(__dirname, 'routes.d'), 'routes');
   loader.addArrayDirectory(path.join(__dirname, 'routes.d'), 'routes');
   loader.load(function(error, config) {
     console.log(config);
