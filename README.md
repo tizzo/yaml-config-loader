@@ -1,5 +1,6 @@
 # YAML-config-loader
 [![Build Status](https://travis-ci.org/tizzo/yaml-config-loader.svg?branch=master)](https://travis-ci.org/tizzo/yaml-config-loader)
+[![Coverage Status](https://img.shields.io/coveralls/tizzo/yaml-config-loader.svg)](https://coveralls.io/r/tizzo/yaml-config-loader?branch=master)
 
 Yet another configuration loader because I too am opinionated about how this should work.
 
