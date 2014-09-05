@@ -10,8 +10,9 @@ Yet another configuration loader because I too am opinionated about how this sho
     - override the config file with environment variables
     - override environment variables with command line options
   - Load configuration from directories
-    - Create an array where one element is the 
-  - Translates between camel case, dash, undersore, and capitalized underscore configuration
+    - Merge a directory of yaml configuration files into one configuratin object (overriding existing configuration where collisions occur)
+    - Create an array containing all of the configs in a directory and set it as an attribute on the top level config object (useful for applications defining multiple self-contained entities)
+  - Translates between camel case, dash, undersore, and capitalized underscore configuration (not yet implemented)
 
 ## Usage
 
