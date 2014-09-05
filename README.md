@@ -24,7 +24,7 @@ Yet another configuration loader because I too am opinionated about how this sho
   loader.addFile(path.join(__dirname, 'defaults.config.yaml'));
   loader.addFile(path.join(__dirname, 'config.yaml'));
   loader.addDirectory(path.join(__dirname, 'conf.d'));
-  loader.addArrayDirectory(path.join(__dirname, 'routes.d'), 'routes');
+  loader.addDirectoryArray(path.join(__dirname, 'routes.d'), 'routes');
   loader.load(function(error, config) {
     console.log(config);
   });
