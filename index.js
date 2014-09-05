@@ -61,7 +61,7 @@ Loader.prototype.loadFile = function(path, done) {
   fs.exists(path, function(exists) {
     if (exists) {
       fs.readFile(path, 'utf8', function(error, data) {
-        /* istanbul ignore next */
+        /* istanbul ignore if: This error condition is near impossible to test. */
         if (error) return done(error);
         self.parseYaml(data, done);
       });
@@ -78,13 +78,13 @@ Loader.prototype.loadFile = function(path, done) {
 Loader.prototype.loadDirectory = function(dirPath, done) {
   var self = this;
   fs.readdir(dirPath, function(error, files) {
-    /* istanbul ignore next */
+    /* istanbul ignore if: This error condition is near impossible to test. */
     if (error) return done(error);
     var loadFile = function(filePath, cb) {
       self.loadFile(path.join(dirPath, filePath), cb);
     };
     async.map(files, loadFile, function(error, confs) {
-      /* istanbul ignore next */
+      /* istanbul ignore if: This error condition is near impossible to test. */
       if (error) return done(error);
       var conf = {};
       for (i in confs) {
@@ -101,7 +101,7 @@ Loader.prototype.loadDirectory = function(dirPath, done) {
 Loader.prototype.loadDirectoryArray = function(dirPath, configKey, done) {
   var self = this;
   fs.readdir(dirPath, function(error, files) {
-    /* istanbul ignore next */
+    /* istanbul ignore if: This error condition is near impossible to test. */
     if (error) return done(error);
     var output = {};
     output[configKey] = [];
@@ -109,7 +109,7 @@ Loader.prototype.loadDirectoryArray = function(dirPath, configKey, done) {
       fs.readFile(path.join(dirPath, file), 'utf8', cb);
     };
     async.map(files, fileLoadHandler, function(error, confs) {
-      /* istanbul ignore next */
+      /* istanbul ignore if: This error condition is near impossible to test. */
       if (error) return done(error);
       for (i in confs) {
         try {
