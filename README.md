@@ -1,4 +1,5 @@
 # YAML-config-loader
+[![Build Status](https://travis-ci.org/tizzo/yaml-config-loader.svg?branch=master)](https://travis-ci.org/tizzo/yaml-config-loader)
 
 Yet another configuration loader because I too am opinionated about how this should work.
 
@@ -20,7 +21,7 @@ Yet another configuration loader because I too am opinionated about how this sho
 
   var laoder = require('yaml-config-loader');
   var path = require('path');
-  loader.hddFile(path.join(__dirname, 'defaults.config.yaml'));
+  loader.addFile(path.join(__dirname, 'defaults.config.yaml'));
   loader.addFile(path.join(__dirname, 'config.yaml'));
   loader.addDirectory(path.join(__dirname, 'conf.d'));
   loader.addArrayDirectory(path.join(__dirname, 'routes.d'), 'routes');
