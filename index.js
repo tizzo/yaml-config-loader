@@ -23,6 +23,14 @@ Loader.prototype.addFile = function(filePath) {
 };
 
 /**
+ * Register a directory that will have config files loaded where older files will override younger.
+ */
+Loader.prototype.addDirectory = function(directoryPath) {
+  this.loads.push(this.loadDirectory.bind(this, directoryPath));
+  return this;
+};
+
+/**
  * Register a directory that will have config files loaded into an array.
  */
 Loader.prototype.addDirectoryArray = function(directoryPath, configKey) {
@@ -30,6 +38,9 @@ Loader.prototype.addDirectoryArray = function(directoryPath, configKey) {
   return this;
 };
 
+/**
+ * Construct a configuration object from the registered paths.
+ */
 Loader.prototype.load = function(done) {
   var self = this;
   async.parallel(this.loads, function(error, configArray) {
@@ -42,6 +53,9 @@ Loader.prototype.load = function(done) {
   });
 };
 
+/**
+ * Load configuration for an individual file.
+ */
 Loader.prototype.loadFile = function(path, done) {
   var self = this;
   fs.exists(path, function(exists) {
@@ -57,6 +71,30 @@ Loader.prototype.loadFile = function(path, done) {
   });
 };
 
+/**
+ * Load config files from a directory allowing new entries to override old.
+ */
+Loader.prototype.loadDirectory = function(dirPath, done) {
+  var self = this;
+  fs.readdir(dirPath, function(error, files) {
+    if (error) return done(error);
+    var loadFile = function(filePath, cb) {
+      self.loadFile(path.join(dirPath, filePath), cb);
+    };
+    async.map(files, loadFile, function(error, confs) {
+      if (error) return done(error);
+      var conf = {};
+      for (i in confs) {
+        conf = self.mergeConifguration(conf, confs[i]);
+      }
+      done(null, conf);
+    });
+  });
+};
+
+/**
+ * Load config files from a directory into an array.
+ */
 Loader.prototype.loadDirectoryArray = function(dirPath, configKey, done) {
   var self = this;
   fs.readdir(dirPath, function(error, files) {

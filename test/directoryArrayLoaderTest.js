@@ -8,6 +8,20 @@ function fixture(name) {
 };
 
 describe('yaml-config-loader', function() {
+  describe('addDirectory', function() {
+    it('should load an array of json overriding older values with newer', function(done) {
+      var loader = new Loader();
+      loader.addDirectory(fixture('valid'));
+      loader.load(function(error, config) {
+        should.not.exist(error);
+        config.captain.should.equal('Jean-Luc Picard');
+        config.vulcan.should.equal('Spok');
+        config.android.should.equal('Data');
+        done();
+      });
+
+    });
+  });
   describe('addDirectoryArray', function() {
     it('should throw an error if a non-existant directory is specified.', function(done) {
       var loader = new Loader();
