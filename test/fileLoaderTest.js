@@ -9,7 +9,7 @@ function fixture(name) {
 
 describe('yaml-config-loader', function() {
   describe('addFile', function() {
-    it('should throw an error if a non-existant file is specified.', function(done) {
+    it('should throw an error if a non-existant file is specified', function(done) {
       var loader = new Loader();
       loader.addFile(fixture('nonsense'));
       loader.load(function(error, config) {

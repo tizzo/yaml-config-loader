@@ -23,7 +23,7 @@ describe('yaml-config-loader', function() {
     });
   });
   describe('addDirectoryArray', function() {
-    it('should throw an error if a non-existant directory is specified.', function(done) {
+    it('should throw an error if a non-existant directory is specified', function(done) {
       var loader = new Loader();
       loader.addDirectoryArray(fixture('nonsense'));
       loader.load(function(error, config) {
@@ -32,7 +32,7 @@ describe('yaml-config-loader', function() {
         done();
       });
     });
-    it('should load an array of valid json into an array.', function(done) {
+    it('should load an array of valid json into an array', function(done) {
       var loader = new Loader();
       loader.addDirectoryArray(fixture('valid'), 'starTrek');
       loader.load(function(error, config) {
