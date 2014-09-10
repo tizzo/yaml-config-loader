@@ -82,6 +82,21 @@ Loader.prototype.load = function(done) {
   });
 };
 
+Loader.prototype.multiDimensionalConfigMerge = function(error, loadedConfig, done) {
+  var self = this;
+  if (error) return done(error);
+  var config = {};
+  var i = null;
+  for (i in loadedConfig) {
+    var j = null;
+    for (j in loadedConfig[i]) {
+      var configItem = loadedConfig[i][j];
+      config = self.mergeConifguration(config, configItem);
+    }
+  }
+  done(null, config);
+};
+
 /**
  * Load configuration for an individual file.
  */
