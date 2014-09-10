@@ -3,12 +3,16 @@ var fs = require('fs');
 var util = require('util');
 var yaml = require('js-yaml');
 var async = require('async');
+var util = require('util');
 
 var Loader = function() {
   this.load = this.load.bind(this);
   this.parseYaml = this.parseYaml.bind(this);
-  this.config = {};
-  this.loads = [];
+  this.multiDimensionalConfigMerge = this.multiDimensionalConfigMerge.bind(this);
+  this.context = {};
+  this.preFileLoads = [];
+  this.fileLoads = [];
+  this.postFileLoads = [];
 };
 
 /**
@@ -18,15 +22,16 @@ var Loader = function() {
  *    The path on disk to register.
  */
 Loader.prototype.addFile = function(filePath) {
-  this.loads.push(this.loadFile.bind(this, filePath));
+  this.fileLoads.push(this.loadFile.bind(this, filePath));
   return this;
 };
 
 /**
- * Register a directory that will have config files loaded where older files will override younger.
+ * Register a directory that will have config files loaded where files loaded
+ * earlier will be overridden by those loaded later.
  */
 Loader.prototype.addDirectory = function(directoryPath) {
-  this.loads.push(this.loadDirectory.bind(this, directoryPath));
+  this.fileLoads.push(this.loadDirectory.bind(this, directoryPath));
   return this;
 };
 
@@ -34,7 +39,17 @@ Loader.prototype.addDirectory = function(directoryPath) {
  * Register a directory that will have config files loaded into an array.
  */
 Loader.prototype.addDirectoryArray = function(directoryPath, configKey) {
-  this.loads.push(this.loadDirectoryArray.bind(this, directoryPath, configKey));
+  this.fileLoads.push(this.loadDirectoryArray.bind(this, directoryPath, configKey));
+  return this;
+};
+
+Loader.prototype.addObject = function(object, translator) {
+  this.postFileLoads.push(this.loadObject.bind(this, object, translator, this.context));
+  return this;
+};
+
+Loader.prototype.addAndNormalizeObject = function(object) {
+  this.postFileLoads.push(this.loadObject.bind(this, this.translateKeyFormat(object), null, this.context));
   return this;
 };
 
@@ -43,13 +58,27 @@ Loader.prototype.addDirectoryArray = function(directoryPath, configKey) {
  */
 Loader.prototype.load = function(done) {
   var self = this;
-  async.parallel(this.loads, function(error, configArray) {
-    if (error) return done(error);
-    var config = {};
-    for (i in configArray) {
-      config = self.mergeConifguration(config, configArray[i]);
-    }
-    done(null, config);
+  self.context.config = {};
+  var tasks = [
+    async.parallel.bind(null, this.preFileLoads),
+    async.parallel.bind(null, this.fileLoads),
+  ];
+  async.parallel(tasks, function(error, loadedConfig) {
+    self.multiDimensionalConfigMerge(error, loadedConfig, function(error, config) {
+      if (!self.postFileLoads.length) {
+        done(error, config);
+      }
+      else {
+        self.context.config = config;
+        async.parallel(self.postFileLoads, function(error, configs) {
+          if (error) return done(error);
+          for (i in configs) {
+            config = self.mergeConifguration(config, configs[i]);
+          }
+          done(error, config);
+        });
+      }
+    });
   });
 };
 
@@ -95,6 +124,13 @@ Loader.prototype.loadDirectory = function(dirPath, done) {
   });
 };
 
+Loader.prototype.loadObject = function(object, translator, context, done) {
+  if (!translator) {
+    return done(null, object);
+  }
+  translator(object, Object.keys(context.config), done);
+};
+
 /**
  * Load config files from a directory into an array.
  */
@@ -126,6 +162,96 @@ Loader.prototype.loadDirectoryArray = function(dirPath, configKey, done) {
 };
 
 /**
+ * Translate configuration from an object then perform a transformation on its
+ * keys.
+ *
+ * This method is useful for loading environment variables in the form of
+ * `SOME_NAME` and using them to override camel case variables like `someName`.
+ *
+ * @param object
+ *   The object whose keys should be transformed.
+ * @param keys
+ *   An array of keys to load from the object.
+ */
+Loader.prototype.translateKeys = function(object, keys, done) {
+  var output = {};
+  keys = keys || Object.keys(object);
+  for (i in keys) {
+    var key = keys[i];
+    // Covert camel case into environment variables (into all upper with
+    // underscores).
+    var replacer = function(match) { return '_' + match};
+    var translatedName = key.replace(/[A-Z]/g, replacer).toUpperCase();
+    if (object.hasOwnProperty(translatedName)) {
+      output[key] = object[translatedName];
+    }
+  }
+  if (done) {
+    setImmediate(done.bind(null, null, output));
+  }
+  return output;
+};
+
+/**
+ * Format the keys on an object converting to them to a supported format.
+ *
+ * @param object
+ *   A plain old javascript object.
+ * @param format
+ *   A supported format to convert the keys to.
+ *
+ *   These are also the supported from formats.
+ *      'camelCase' - standard camelCase with capitalization splitting parts.
+ *      'CAPITAL_UNDERSCORES' - standard ENV variable format
+ *      'lower-dashes' - all lower case with dashes, typical of cli parameters.
+ */
+Loader.prototype.translateKeyFormat = function(object, format) {
+  var output = {};
+  format = format || 'camelCase';
+  for (key in object) {
+    if (object.hasOwnProperty(key)) {
+      var parts = key
+        .split(/([A-Z][a-z]+)|_|-/g)
+        .filter(function(element) {
+          return element;
+        })
+        .map(function(item) {
+          return item.toLowerCase();
+        });
+      var newKey = '';
+      switch (format) {
+        default:
+        case 'camelCase':
+          newKey = this.formatCamelCase(parts);
+          break;
+        case 'CAPITAL_UNDERSCORES':
+          newKey = parts.join('_').toUpperCase();
+          break;
+        case 'lower-dashes':
+          newKey = parts.join('-').toLowerCase();
+          break;
+      }
+      output[newKey] = object[key];
+    }
+  }
+  return output;
+};
+
+/**
+ * Utility function to format an array of word parts in camelCase.
+ */
+Loader.prototype.formatCamelCase = function(parts) {
+  var parts = parts.slice();
+  var output = parts.shift();
+  var part = '';
+  for (i in parts) {
+    part = parts[i];
+    output += part.substr(0, 1).toUpperCase() + part.substring(1);
+  }
+  return output;
+}
+
+/**
  * Parse a yaml file and report an error if necessary.
  */
 Loader.prototype.parseYaml = function(data, done) {
@@ -142,6 +268,7 @@ Loader.prototype.parseYaml = function(data, done) {
  * the second.
  */
 Loader.prototype.mergeConifguration = function(one, two) {
+  var i = null;
   for (i in two) {
     if (two.hasOwnProperty(i)) {
       one[i] = two[i];
