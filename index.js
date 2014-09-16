@@ -8,11 +8,30 @@ var util = require('util');
 var Loader = function() {
   this.load = this.load.bind(this);
   this.parseYaml = this.parseYaml.bind(this);
-  this.multiDimensionalConfigMerge = this.multiDimensionalConfigMerge.bind(this);
+  this.add = this.add.bind(this);
   this.context = {};
-  this.preFileLoads = [];
-  this.fileLoads = [];
-  this.postFileLoads = [];
+  this.loads = [];
+  this.loads = [];
+  this.loads = [];
+};
+
+/**
+ * Flexible loader function that can load files from objects or directories.
+ */
+Loader.prototype.add = function(item, options) {
+  switch (typeof item) {
+    case 'string':
+      this.addFileOrDirectory(item);
+      break;
+    case 'object':
+      this.addObject(item);
+      break;
+  }
+};
+
+Loader.prototype.addFileOrDirectory = function(path) {
+  this.loads.push(this.loadFileOrDirectory.bind(this, path));
+  return this;
 };
 
 /**
@@ -22,7 +41,7 @@ var Loader = function() {
  *    The path on disk to register.
  */
 Loader.prototype.addFile = function(filePath) {
-  this.fileLoads.push(this.loadFile.bind(this, filePath));
+  this.loads.push(this.loadFile.bind(this, filePath));
   return this;
 };
 
@@ -31,7 +50,7 @@ Loader.prototype.addFile = function(filePath) {
  * earlier will be overridden by those loaded later.
  */
 Loader.prototype.addDirectory = function(directoryPath) {
-  this.fileLoads.push(this.loadDirectory.bind(this, directoryPath));
+  this.loads.push(this.loadDirectory.bind(this, directoryPath));
   return this;
 };
 
@@ -39,17 +58,18 @@ Loader.prototype.addDirectory = function(directoryPath) {
  * Register a directory that will have config files loaded into an array.
  */
 Loader.prototype.addDirectoryArray = function(directoryPath, configKey) {
-  this.fileLoads.push(this.loadDirectoryArray.bind(this, directoryPath, configKey));
+  this.loads.push(this.loadDirectoryArray.bind(this, directoryPath, configKey));
   return this;
 };
 
 Loader.prototype.addObject = function(object, translator) {
-  this.postFileLoads.push(this.loadObject.bind(this, object, translator, this.context));
+  this.loads.push(this.loadObject.bind(this, object, this.context));
   return this;
 };
 
-Loader.prototype.addAndNormalizeObject = function(object) {
-  this.postFileLoads.push(this.loadObject.bind(this, this.translateKeyFormat(object), null, this.context));
+Loader.prototype.addAndNormalizeObject = function(object, format) {
+  format = format || 'camelCase';
+  this.loads.push(this.loadObject.bind(this, this.translateKeyFormat(object, format), this.context));
   return this;
 };
 
@@ -59,42 +79,33 @@ Loader.prototype.addAndNormalizeObject = function(object) {
 Loader.prototype.load = function(done) {
   var self = this;
   self.context.config = {};
-  var tasks = [
-    async.parallel.bind(null, this.preFileLoads),
-    async.parallel.bind(null, this.fileLoads),
-  ];
-  async.parallel(tasks, function(error, loadedConfig) {
-    self.multiDimensionalConfigMerge(error, loadedConfig, function(error, config) {
-      if (!self.postFileLoads.length) {
-        done(error, config);
-      }
-      else {
-        self.context.config = config;
-        async.parallel(self.postFileLoads, function(error, configs) {
-          if (error) return done(error);
-          for (i in configs) {
-            config = self.mergeConifguration(config, configs[i]);
-          }
-          done(error, config);
-        });
-      }
-    });
+  async.series(this.loads, function(error, configs) {
+    var config = {};
+    for (i in configs) {
+      config = self.mergeConifguration(config, configs[i]);
+    }
+    done(error, config);
   });
 };
 
-Loader.prototype.multiDimensionalConfigMerge = function(error, loadedConfig, done) {
+/**
+ * Load either a file or a directory based on path.
+ */
+Loader.prototype.loadFileOrDirectory = function(path, done) {
   var self = this;
-  if (error) return done(error);
-  var config = {};
-  var i = null;
-  for (i in loadedConfig) {
-    var j = null;
-    for (j in loadedConfig[i]) {
-      var configItem = loadedConfig[i][j];
-      config = self.mergeConifguration(config, configItem);
+  fs.stat(path, function(error, stat) {
+    if (error) return done(error);
+    if (stat.isDirectory()) {
+      self.loadDirectory(path, function(error, config) {
+        done(error, config);
+      });
     }
-  }
-  done(null, config);
+    else {
+      self.loadFile(path, function(error, config) {
+        done(error, config);
+      });
+    }
+  });
 };
 
 /**
@@ -139,11 +150,8 @@ Loader.prototype.loadDirectory = function(dirPath, done) {
   });
 };
 
-Loader.prototype.loadObject = function(object, translator, context, done) {
-  if (!translator) {
-    return done(null, object);
-  }
-  translator(object, Object.keys(context.config), done);
+Loader.prototype.loadObject = function(object, context, done) {
+  return done(null, object);
 };
 
 /**
