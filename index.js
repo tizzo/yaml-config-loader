@@ -29,6 +29,9 @@ Loader.prototype.add = function(item, options) {
   }
 };
 
+/**
+ * Add a file or directory for automatic detection.
+ */
 Loader.prototype.addFileOrDirectory = function(path) {
   this.loads.push(this.loadFileOrDirectory.bind(this, path));
   return this;
@@ -62,11 +65,22 @@ Loader.prototype.addDirectoryArray = function(directoryPath, configKey) {
   return this;
 };
 
+/**
+ * Add an object to be merged in at the appropriate level.
+ */
 Loader.prototype.addObject = function(object, translator) {
   this.loads.push(this.loadObject.bind(this, object, this.context));
   return this;
 };
 
+/**
+ * Add an object but normalize it's keys before merging them in.
+ *
+ * @param object
+ *    The object to add.
+ * @param format
+ *    A string representing the format. See `Loader.translateKeyFormat()` for options.
+ */
 Loader.prototype.addAndNormalizeObject = function(object, format) {
   format = format || 'camelCase';
   this.loads.push(this.loadObject.bind(this, this.translateKeyFormat(object, format), this.context));
@@ -150,6 +164,11 @@ Loader.prototype.loadDirectory = function(dirPath, done) {
   });
 };
 
+/**
+ * Load an object.
+ *
+ * A simple wrapper to be added to the async function list.
+ */
 Loader.prototype.loadObject = function(object, context, done) {
   return done(null, object);
 };
@@ -176,7 +195,7 @@ Loader.prototype.loadDirectoryArray = function(dirPath, configKey, done) {
           output[configKey].push(conf);
         }
         catch(e) {
-          // Do something?
+          // TODO: Emit an error.
         }
       }
       done(null, output);
