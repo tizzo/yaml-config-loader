@@ -1,6 +1,6 @@
 {
   "name": "yaml-config-loader",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "A configuration loader that loads yaml.",
   "main": "index.js",
   "scripts": {
@@ -17,6 +17,7 @@
     "coveralls": "^2.11.1",
     "istanbul": "^0.3.2",
     "mocha": "^1.21.4",
-    "should": "^4.0.4"
+    "should": "^4.0.4",
+    "yargs": "^1.3.1"
   }
 }
