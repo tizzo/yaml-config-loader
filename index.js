@@ -21,10 +21,10 @@ var Loader = function() {
 Loader.prototype.add = function(item, options) {
   switch (typeof item) {
     case 'string':
-      this.addFileOrDirectory(item);
+      this.addFileOrDirectory(item, options);
       break;
     case 'object':
-      this.addObject(item);
+      this.addObject(item, options);
       break;
   }
 };
@@ -32,8 +32,8 @@ Loader.prototype.add = function(item, options) {
 /**
  * Add a file or directory for automatic detection.
  */
-Loader.prototype.addFileOrDirectory = function(path) {
-  this.loads.push(this.loadFileOrDirectory.bind(this, path));
+Loader.prototype.addFileOrDirectory = function(path, options) {
+  this.loads.push(this.loadFileOrDirectory.bind(this, path, options));
   return this;
 };
 
@@ -43,8 +43,8 @@ Loader.prototype.addFileOrDirectory = function(path) {
  * @param filePath
  *    The path on disk to register.
  */
-Loader.prototype.addFile = function(filePath) {
-  this.loads.push(this.loadFile.bind(this, filePath));
+Loader.prototype.addFile = function(filePath, options) {
+  this.loads.push(this.loadFile.bind(this, filePath, options));
   return this;
 };
 
@@ -52,24 +52,24 @@ Loader.prototype.addFile = function(filePath) {
  * Register a directory that will have config files loaded where files loaded
  * earlier will be overridden by those loaded later.
  */
-Loader.prototype.addDirectory = function(directoryPath) {
-  this.loads.push(this.loadDirectory.bind(this, directoryPath));
+Loader.prototype.addDirectory = function(directoryPath, options) {
+  this.loads.push(this.loadDirectory.bind(this, directoryPath, options));
   return this;
 };
 
 /**
  * Register a directory that will have config files loaded into an array.
  */
-Loader.prototype.addDirectoryArray = function(directoryPath, configKey) {
-  this.loads.push(this.loadDirectoryArray.bind(this, directoryPath, configKey));
+Loader.prototype.addDirectoryArray = function(directoryPath, configKey, options) {
+  this.loads.push(this.loadDirectoryArray.bind(this, directoryPath, configKey, options));
   return this;
 };
 
 /**
  * Add an object to be merged in at the appropriate level.
  */
-Loader.prototype.addObject = function(object, translator) {
-  this.loads.push(this.loadObject.bind(this, object, this.context));
+Loader.prototype.addObject = function(object, options) {
+  this.loads.push(this.loadObject.bind(this, object, options, this.context));
   return this;
 };
 
@@ -81,9 +81,9 @@ Loader.prototype.addObject = function(object, translator) {
  * @param format
  *    A string representing the format. See `Loader.translateKeyFormat()` for options.
  */
-Loader.prototype.addAndNormalizeObject = function(object, format) {
+Loader.prototype.addAndNormalizeObject = function(object, format, options) {
   format = format || 'camelCase';
-  this.loads.push(this.loadObject.bind(this, this.translateKeyFormat(object, format), this.context));
+  this.loads.push(this.loadObject.bind(this, this.translateKeyFormat(object, format), options, this.context));
   return this;
 };
 
@@ -105,17 +105,17 @@ Loader.prototype.load = function(done) {
 /**
  * Load either a file or a directory based on path.
  */
-Loader.prototype.loadFileOrDirectory = function(path, done) {
+Loader.prototype.loadFileOrDirectory = function(path, options, done) {
   var self = this;
   fs.stat(path, function(error, stat) {
     if (error) return done(error);
     if (stat.isDirectory()) {
-      self.loadDirectory(path, function(error, config) {
+      self.loadDirectory(path, options, function(error, config) {
         done(error, config);
       });
     }
     else {
-      self.loadFile(path, function(error, config) {
+      self.loadFile(path, options, function(error, config) {
         done(error, config);
       });
     }
@@ -125,7 +125,8 @@ Loader.prototype.loadFileOrDirectory = function(path, done) {
 /**
  * Load configuration for an individual file.
  */
-Loader.prototype.loadFile = function(path, done) {
+Loader.prototype.loadFile = function(path, options, done) {
+  done = done || options;
   var self = this;
   fs.exists(path, function(exists) {
     if (exists) {
@@ -144,13 +145,13 @@ Loader.prototype.loadFile = function(path, done) {
 /**
  * Load config files from a directory allowing new entries to override old.
  */
-Loader.prototype.loadDirectory = function(dirPath, done) {
+Loader.prototype.loadDirectory = function(dirPath, options, done) {
   var self = this;
   fs.readdir(dirPath, function(error, files) {
     /* istanbul ignore if: This error condition is near impossible to test. */
     if (error) return done(error);
     var loadFile = function(filePath, cb) {
-      self.loadFile(path.join(dirPath, filePath), cb);
+      self.loadFile(path.join(dirPath, filePath), options, cb);
     };
     async.map(files, loadFile, function(error, confs) {
       /* istanbul ignore if: This error condition is near impossible to test. */
@@ -169,14 +170,14 @@ Loader.prototype.loadDirectory = function(dirPath, done) {
  *
  * A simple wrapper to be added to the async function list.
  */
-Loader.prototype.loadObject = function(object, context, done) {
+Loader.prototype.loadObject = function(object, options, context, done) {
   return done(null, object);
 };
 
 /**
  * Load config files from a directory into an array.
  */
-Loader.prototype.loadDirectoryArray = function(dirPath, configKey, done) {
+Loader.prototype.loadDirectoryArray = function(dirPath, configKey, options, done) {
   var self = this;
   fs.readdir(dirPath, function(error, files) {
     /* istanbul ignore if: This error condition is near impossible to test. */
