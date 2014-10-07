@@ -11,8 +11,6 @@ var Loader = function() {
   this.add = this.add.bind(this);
   this.context = {};
   this.loads = [];
-  this.loads = [];
-  this.loads = [];
 };
 
 /**
