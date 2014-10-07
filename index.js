@@ -310,9 +310,16 @@ Loader.prototype.parseYaml = function(data, done) {
  */
 Loader.prototype.mergeConifguration = function(one, two) {
   var i = null;
-  for (i in two) {
-    if (two.hasOwnProperty(i)) {
-      one[i] = two[i];
+  if (Array.isArray(one)) {
+    for (i in two) {
+      one.push(two[i]);
+    }
+  }
+  else {
+    for (i in two) {
+      if (two.hasOwnProperty(i)) {
+        one[i] = two[i];
+      }
     }
   }
   return one;
