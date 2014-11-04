@@ -10,12 +10,14 @@ var Loader = function() {
   this.load = this.load.bind(this);
   this.parseYaml = this.parseYaml.bind(this);
   this.add = this.add.bind(this);
+  this.errorHandler = this.errorHandler.bind(this);
   this.context = {};
   this.loads = [];
   this.loads = [];
   this.loads = [];
   this.errorOnError = false;
 };
+util.inherits(Loader, EventEmitter);
 
 /**
  * Allow errors to be handled appropriately based on configuration.
@@ -31,7 +33,6 @@ Loader.prototype.errorHandler = function(error, done) {
     done(null, {});
   }
 };
-util.inherits(Loader, EventEmitter);
 
 /**
  * Flexible loader function that can load files from objects or directories.
@@ -97,7 +98,7 @@ Loader.prototype.addObject = function(object, options) {
  * @param object
  *    The object to add.
  * @param format
- *    A string representing the format. See `Loader.translateKeyFormat()` for options.
+ *    A string representing the format. See `Loader.translateKeyFormat()`.
  */
 Loader.prototype.addAndNormalizeObject = function(object, format, options) {
   format = format || 'camelCase';
