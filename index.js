@@ -207,37 +207,6 @@ Loader.prototype.loadDirectoryArray = function(dirPath, configKey, options, done
 };
 
 /**
- * Translate configuration from an object then perform a transformation on its
- * keys.
- *
- * This method is useful for loading environment variables in the form of
- * `SOME_NAME` and using them to override camel case variables like `someName`.
- *
- * @param object
- *   The object whose keys should be transformed.
- * @param keys
- *   An array of keys to load from the object.
- */
-Loader.prototype.translateKeys = function(object, keys, done) {
-  var output = {};
-  keys = keys || Object.keys(object);
-  for (i in keys) {
-    var key = keys[i];
-    // Covert camel case into environment variables (into all upper with
-    // underscores).
-    var replacer = function(match) { return '_' + match};
-    var translatedName = key.replace(/[A-Z]/g, replacer).toUpperCase();
-    if (object.hasOwnProperty(translatedName)) {
-      output[key] = object[translatedName];
-    }
-  }
-  if (done) {
-    setImmediate(done.bind(null, null, output));
-  }
-  return output;
-};
-
-/**
  * Format the keys on an object converting to them to a supported format.
  *
  * @param object
@@ -265,7 +234,6 @@ Loader.prototype.translateKeyFormat = function(object, format) {
         });
       var newKey = '';
       switch (format) {
-        default:
         case 'camelCase':
           newKey = this.formatCamelCase(parts);
           break;
