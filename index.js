@@ -23,6 +23,7 @@ var Loader = function() {
 Loader.prototype.errorHandler = function(error, done) {
   arguments = Array.prototype.slice.call(arguments, 0);
   var done = arguments.pop();
+  this.emit('error', error);
   if (error && this.errorOnError) {
     done(error);
   }
