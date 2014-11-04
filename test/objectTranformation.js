@@ -5,26 +5,6 @@ var path = require('path');
 var Loader = require('..');
 
 describe('yaml-config-loader', function() {
-  describe('translateKeys', function() {
-    it('should translate keys based on the specified strategy', function(done) {
-      var mockEnvVariables = {
-        JEDI_MASTER: 'Obi Wan Kanobi',
-        SITH_LORD: 'Darth Vader',
-        PORT: 9000,
-      };
-      var keys = [ 'jediMaster', 'sithLord', 'port', 'unset' ];
-      var loader = new Loader();
-      var output = loader.translateKeys(mockEnvVariables, keys, function(error, config) {
-        config.should.equal(output);
-        config.jediMaster.should.equal(mockEnvVariables.JEDI_MASTER);
-        config.sithLord.should.equal(mockEnvVariables.SITH_LORD);
-        config.port.should.equal(9000);
-        config.hasOwnProperty('unset').should.equal(false);
-        should.not.exist(config.unset);
-        done();
-      });
-    });
-  });
   describe('translateKeyFormat', function() {
     it('should normalize camelCase, dashes, and underscores to a common output', function() {
       var object = {
