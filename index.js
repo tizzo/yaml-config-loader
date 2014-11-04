@@ -4,14 +4,18 @@ var util = require('util');
 var yaml = require('js-yaml');
 var async = require('async');
 var util = require('util');
+var EventEmitter = require('events').EventEmitter;
 
 var Loader = function() {
   this.load = this.load.bind(this);
   this.parseYaml = this.parseYaml.bind(this);
   this.add = this.add.bind(this);
+  this.handleError = this.handleError.bind(this);
   this.context = {};
   this.loads = [];
+  this.emitErrors = true;
 };
+util.inherits(Loader, EventEmitter);
 
 /**
  * Flexible loader function that can load files from objects or directories.
