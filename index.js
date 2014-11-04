@@ -10,10 +10,25 @@ var Loader = function() {
   this.load = this.load.bind(this);
   this.parseYaml = this.parseYaml.bind(this);
   this.add = this.add.bind(this);
-  this.handleError = this.handleError.bind(this);
   this.context = {};
   this.loads = [];
-  this.emitErrors = true;
+  this.loads = [];
+  this.loads = [];
+  this.errorOnError = false;
+};
+
+/**
+ * Allow errors to be handled appropriately based on configuration.
+ */
+Loader.prototype.errorHandler = function(error, done) {
+  arguments = Array.prototype.slice.call(arguments, 0);
+  var done = arguments.pop();
+  if (error && this.errorOnError) {
+    done(error);
+  }
+  else {
+    done(null, {});
+  }
 };
 util.inherits(Loader, EventEmitter);
 
@@ -110,7 +125,7 @@ Loader.prototype.load = function(done) {
 Loader.prototype.loadFileOrDirectory = function(path, options, done) {
   var self = this;
   fs.stat(path, function(error, stat) {
-    if (error) return done(error);
+    if (error) return self.errorHandler(error, done);
     if (stat.isDirectory()) {
       self.loadDirectory(path, options, function(error, config) {
         done(error, config);
