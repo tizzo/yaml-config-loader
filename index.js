@@ -6,16 +6,15 @@ var async = require('async');
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 
-var Loader = function() {
+var Loader = function(params) {
+  params = params || {};
   this.load = this.load.bind(this);
   this.parseYaml = this.parseYaml.bind(this);
   this.add = this.add.bind(this);
   this.errorHandler = this.errorHandler.bind(this);
   this.context = {};
   this.loads = [];
-  this.loads = [];
-  this.loads = [];
-  this.errorOnError = false;
+  this.fastError = params.fastError;
 };
 util.inherits(Loader, EventEmitter);
 
@@ -25,11 +24,11 @@ util.inherits(Loader, EventEmitter);
 Loader.prototype.errorHandler = function(error, done) {
   arguments = Array.prototype.slice.call(arguments, 0);
   var done = arguments.pop();
-  this.emit('error', error);
-  if (error && this.errorOnError) {
+  if (error && this.fastError) {
     done(error);
   }
   else {
+    this.emit('error', error);
     done(null, {});
   }
 };
@@ -151,7 +150,7 @@ Loader.prototype.loadFile = function(path, options, done) {
     if (exists) {
       fs.readFile(path, 'utf8', function(error, data) {
         /* istanbul ignore if: This error condition is near impossible to test. */
-        if (error) return done(error);
+        if (error) return self.errorHandler(error, done);
         self.parseYaml(data, done);
       });
     }
@@ -168,13 +167,13 @@ Loader.prototype.loadDirectory = function(dirPath, options, done) {
   var self = this;
   fs.readdir(dirPath, function(error, files) {
     /* istanbul ignore if: This error condition is near impossible to test. */
-    if (error) return done(error);
+    if (error) return self.errorHandler(error, done);
     var loadFile = function(filePath, cb) {
       self.loadFile(path.join(dirPath, filePath), options, cb);
     };
     async.map(files, loadFile, function(error, confs) {
       /* istanbul ignore if: This error condition is near impossible to test. */
-      if (error) return done(error);
+      if (error) return self.errorHandler(error, done);
       var conf = {};
       for (i in confs) {
         conf = self.mergeConifguration(conf, confs[i]);
@@ -200,7 +199,7 @@ Loader.prototype.loadDirectoryArray = function(dirPath, configKey, options, done
   var self = this;
   fs.readdir(dirPath, function(error, files) {
     /* istanbul ignore if: This error condition is near impossible to test. */
-    if (error) return done(error);
+    if (error) return self.errorHandler(error, done);
     var output = {};
     output[configKey] = [];
     var fileLoadHandler = function(file, cb){
@@ -208,7 +207,7 @@ Loader.prototype.loadDirectoryArray = function(dirPath, configKey, options, done
     };
     async.map(files, fileLoadHandler, function(error, confs) {
       /* istanbul ignore if: This error condition is near impossible to test. */
-      if (error) return done(error);
+      if (error) return self.errorHandler(error, done);
       for (i in confs) {
         try {
           var conf = yaml.safeLoad(confs[i]);
