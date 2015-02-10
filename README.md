@@ -20,7 +20,7 @@ Yet another configuration loader because I too am opinionated about how this sho
 
 ``` javascript
 
-  var Laoder = require('yaml-config-loader');
+  var Loader = require('yaml-config-loader');
   var path = require('path');
 
   var yargs = require('yargs');
