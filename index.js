@@ -169,7 +169,10 @@ Loader.prototype.loadDirectory = function(dirPath, options, done) {
     /* istanbul ignore if: This error condition is near impossible to test. */
     if (error) return self.errorHandler(error, done);
     var loadFile = function(filePath, cb) {
-      self.loadFile(path.join(dirPath, filePath), options, cb);
+      self.loadFile(path.join(dirPath, filePath), options, function(error, data) {
+        if (error) return self.errorHandler(error, cb);
+        cb(null, data);
+      });
     };
     async.map(files, loadFile, function(error, confs) {
       /* istanbul ignore if: This error condition is near impossible to test. */
