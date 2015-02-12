@@ -14,7 +14,7 @@ var Loader = function(params) {
   this.errorHandler = this.errorHandler.bind(this);
   this.context = {};
   this.loads = [];
-  this.fastError = params.fastError;
+  this.stopOnError = params.stopOnError;
 };
 util.inherits(Loader, EventEmitter);
 
@@ -24,7 +24,7 @@ util.inherits(Loader, EventEmitter);
 Loader.prototype.errorHandler = function(error, done) {
   arguments = Array.prototype.slice.call(arguments, 0);
   var done = arguments.pop();
-  if (error && this.fastError) {
+  if (error && this.stopOnError) {
     done(error);
   }
   else {
@@ -216,8 +216,8 @@ Loader.prototype.loadDirectoryArray = function(dirPath, configKey, options, done
           var conf = yaml.safeLoad(confs[i]);
           output[configKey].push(conf);
         }
-        catch(e) {
-          // TODO: Emit an error.
+        catch(error) {
+          self.emit('error', error);
         }
       }
       done(null, output);
