@@ -24,7 +24,7 @@ describe('yaml-config-loader', function() {
   });
   describe('addDirectoryArray', function() {
     it('should throw an error if a non-existant directory is specified', function(done) {
-      var loader = new Loader({fastError: true});
+      var loader = new Loader({stopOnError: true});
       loader.addDirectoryArray(fixture('nonsense'));
       loader.load(function(error, config) {
         should.exist(error);
