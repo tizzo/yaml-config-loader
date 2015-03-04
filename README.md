@@ -32,11 +32,13 @@ Yet another configuration loader because I too am opinionated about how this sho
     .argv;
 
 
-  // First load default configuration.
-  loader.addFile(path.join(__dirname, 'defaults.config.yaml'));
+  // First load default configuration and filter the final configuration to settings defined in this file.
+  loader.add(path.join(__dirname, 'defaults.config.yaml'), { filterKeys: true });
   // Override defaults with a conf file in /etc/myapp
-  loader.addFile(path.join('etc', 'myapp', 'config.yaml'));
+  loader.add(path.join('etc', 'myapp', 'config.yaml'));
+  // Override settings with files in the /etc/myapp/conf.d directory.
   loader.addDirectory(path.join('etc', 'myapp', 'conf.d'));
+  // Add / override the `routes` configuration key by building an array of routes loaded from files in /etc/myapp/routes.d
   loader.addDirectoryArray(path.join('etc', 'myapp', 'routes.d'), 'routes');
   // Override all configuration to this point with config from the users preference folder.
   loader.addFile(path.resolve(path.join('~', '.myapp.yaml')));
@@ -45,7 +47,14 @@ Yet another configuration loader because I too am opinionated about how this sho
   loader.addAndStandardizeObject(process.env);
   loader.addAndStandardizeObject(argv);
   loader.load(function(error, config) {
+    // Print the resulting configuration.
     console.log(config);
   });
 
 ```
+
+## Options
+
+Add methods may contain options, these include:
+
+  - `filterKeys` whether to limit the final config output to keys present in this configuration object.

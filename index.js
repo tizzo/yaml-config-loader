@@ -15,6 +15,7 @@ var Loader = function(params) {
   this.context = {};
   this.loads = [];
   this.stopOnError = params.stopOnError;
+  this.postFilters = params.postFilters || [];
 };
 util.inherits(Loader, EventEmitter);
 
@@ -116,6 +117,11 @@ Loader.prototype.load = function(done) {
     for (i in configs) {
       config = self.mergeConifguration(config, configs[i]);
     }
+    if (self.postFilters.length) {
+      for (i in self.postFilters) {
+        config = self.postFilters[i](config);
+      }
+    }
     done(error, config);
   });
 };
@@ -141,6 +147,21 @@ Loader.prototype.loadFileOrDirectory = function(path, options, done) {
 };
 
 /**
+ * Filter the keys of the configuration hash by an array of allowed values.
+ */
+Loader.prototype.filterKeys = function(keys, config) {
+  console.log(arguments);
+  var output = {};
+  for (i in config) {
+    if (keys.indexOf(i) !== -1) {
+      console.log('include', i);
+      output[i] = config[i];
+    }
+  }
+  return output;
+};
+
+/**
  * Load configuration for an individual file.
  */
 Loader.prototype.loadFile = function(path, options, done) {
@@ -151,7 +172,12 @@ Loader.prototype.loadFile = function(path, options, done) {
       fs.readFile(path, 'utf8', function(error, data) {
         /* istanbul ignore if: This error condition is near impossible to test. */
         if (error) return self.errorHandler(error, done);
-        self.parseYaml(data, done);
+        self.parseYaml(data, function(error, config) {
+          if (options && options.filterKeys === true) {
+            self.postFilters.push(self.filterKeys.bind(self, Object.keys(config)));
+          }
+          done(error, config);
+        });
       });
     }
     else {
@@ -169,10 +195,7 @@ Loader.prototype.loadDirectory = function(dirPath, options, done) {
     /* istanbul ignore if: This error condition is near impossible to test. */
     if (error) return self.errorHandler(error, done);
     var loadFile = function(filePath, cb) {
-      self.loadFile(path.join(dirPath, filePath), options, function(error, data) {
-        if (error) return self.errorHandler(error, cb);
-        cb(null, data);
-      });
+      self.loadFile(path.join(dirPath, filePath), options, cb);
     };
     async.map(files, loadFile, function(error, confs) {
       /* istanbul ignore if: This error condition is near impossible to test. */
