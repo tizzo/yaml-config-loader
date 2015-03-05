@@ -150,11 +150,9 @@ Loader.prototype.loadFileOrDirectory = function(path, options, done) {
  * Filter the keys of the configuration hash by an array of allowed values.
  */
 Loader.prototype.filterKeys = function(keys, config) {
-  console.log(arguments);
   var output = {};
   for (i in config) {
     if (keys.indexOf(i) !== -1) {
-      console.log('include', i);
       output[i] = config[i];
     }
   }
@@ -165,7 +163,10 @@ Loader.prototype.filterKeys = function(keys, config) {
  * Load configuration for an individual file.
  */
 Loader.prototype.loadFile = function(path, options, done) {
-  done = done || options;
+  if (!done) {
+    done = options;
+    options = false;
+  }
   var self = this;
   fs.exists(path, function(exists) {
     if (exists) {
@@ -173,7 +174,7 @@ Loader.prototype.loadFile = function(path, options, done) {
         /* istanbul ignore if: This error condition is near impossible to test. */
         if (error) return self.errorHandler(error, done);
         self.parseYaml(data, function(error, config) {
-          if (options && options.filterKeys === true) {
+          if (options && options.filterKeys === true && config) {
             self.postFilters.push(self.filterKeys.bind(self, Object.keys(config)));
           }
           done(error, config);
