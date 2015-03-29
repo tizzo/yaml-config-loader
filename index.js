@@ -339,7 +339,7 @@ Loader.prototype.parseYaml = function(data, done) {
  */
 Loader.prototype.mergeConifguration = function(one, two, options) {
   var i = null;
-  if (Array.isArray(one)) {
+  if (one instanceof Array) {
     for (i in two) {
       one.push(two[i]);
     }
@@ -347,7 +347,24 @@ Loader.prototype.mergeConifguration = function(one, two, options) {
   else {
     for (i in two) {
       if (two.hasOwnProperty(i)) {
-        one[i] = two[i];
+        var deepMerge = options && options.deepMerge && options.deepMerge.indexOf(i) !== -1;
+        if (deepMerge) {
+          if (one[i] instanceof Array) {
+            var j = null;
+            for (j in two[i]) {
+              one[i].push(two[i][j]);
+            }
+          }
+          else if (one && (typeof one[i] == typeof two[i])) {
+            one[i] = this.mergeConifguration(one[i], two[i]);
+          }
+          else {
+            one[i] = two[i];
+          }
+        }
+        else {
+          one[i] = two[i];
+        }
       }
     }
   }
