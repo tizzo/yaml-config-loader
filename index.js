@@ -30,7 +30,7 @@ Loader.prototype.errorHandler = function(error, done) {
   }
   else {
     this.emit('error', error);
-    done(null, {});
+    done(null, { config: {} });
   }
 };
 
@@ -114,8 +114,11 @@ Loader.prototype.load = function(done) {
   self.context.config = {};
   async.series(this.loads, function(error, configs) {
     var config = {};
+    var i = null;
     for (i in configs) {
-      config = self.mergeConifguration(config, configs[i]);
+      if (configs[i] && configs[i].config) {
+        config = self.mergeConifguration(config, configs[i].config, configs[i].options);
+      }
     }
     if (self.postFilters.length) {
       for (i in self.postFilters) {
@@ -134,14 +137,10 @@ Loader.prototype.loadFileOrDirectory = function(path, options, done) {
   fs.stat(path, function(error, stat) {
     if (error) return self.errorHandler(error, done);
     if (stat.isDirectory()) {
-      self.loadDirectory(path, options, function(error, config) {
-        done(error, config);
-      });
+      self.loadDirectory(path, options, done);
     }
     else {
-      self.loadFile(path, options, function(error, config) {
-        done(error, config);
-      });
+      self.loadFile(path, options, done);
     }
   });
 };
@@ -177,7 +176,7 @@ Loader.prototype.loadFile = function(path, options, done) {
           if (options && options.filterKeys === true && config) {
             self.postFilters.push(self.filterKeys.bind(self, Object.keys(config)));
           }
-          done(error, config);
+          return done(error, { config: config, options: options });
         });
       });
     }
@@ -195,6 +194,7 @@ Loader.prototype.loadDirectory = function(dirPath, options, done) {
   fs.readdir(dirPath, function(error, files) {
     /* istanbul ignore if: This error condition is near impossible to test. */
     if (error) return self.errorHandler(error, done);
+    files = self.filterYamlFiles(files);
     var loadFile = function(filePath, cb) {
       self.loadFile(path.join(dirPath, filePath), options, cb);
     };
@@ -203,10 +203,23 @@ Loader.prototype.loadDirectory = function(dirPath, options, done) {
       if (error) return self.errorHandler(error, done);
       var conf = {};
       for (i in confs) {
-        conf = self.mergeConifguration(conf, confs[i]);
+        conf = self.mergeConifguration(conf, confs[i].config, confs[i].options);
       }
-      done(null, conf);
+      done(null, { config: conf, options: options});
     });
+  });
+};
+
+/**
+ *
+ *
+ * @param fileNames
+ *    An array of fileNames.
+ */
+Loader.prototype.filterYamlFiles = function(fileNames) {
+  return fileNames.filter(function(item) {
+    var reg = new RegExp('\.ya?ml');
+    return reg.test(path.extname(item));
   });
 };
 
@@ -216,7 +229,7 @@ Loader.prototype.loadDirectory = function(dirPath, options, done) {
  * A simple wrapper to be added to the async function list.
  */
 Loader.prototype.loadObject = function(object, options, context, done) {
-  return done(null, object);
+  return done(null, { config: object, options: options });
 };
 
 /**
@@ -232,6 +245,7 @@ Loader.prototype.loadDirectoryArray = function(dirPath, configKey, options, done
     var fileLoadHandler = function(file, cb){
       fs.readFile(path.join(dirPath, file), 'utf8', cb);
     };
+    files = self.filterYamlFiles(files);
     async.map(files, fileLoadHandler, function(error, confs) {
       /* istanbul ignore if: This error condition is near impossible to test. */
       if (error) return self.errorHandler(error, done);
@@ -244,7 +258,7 @@ Loader.prototype.loadDirectoryArray = function(dirPath, configKey, options, done
           self.emit('error', error);
         }
       }
-      done(null, output);
+      done(null, { config: output, options: options });
     });
   });
 };
@@ -323,7 +337,7 @@ Loader.prototype.parseYaml = function(data, done) {
  * Merge two confiugration objects overriding values on the first with values on
  * the second.
  */
-Loader.prototype.mergeConifguration = function(one, two) {
+Loader.prototype.mergeConifguration = function(one, two, options) {
   var i = null;
   if (Array.isArray(one)) {
     for (i in two) {
