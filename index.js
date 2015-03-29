@@ -167,7 +167,6 @@ Loader.prototype.filterKeys = function(keys, config) {
  * Allow only the collection of all whitelisted keys.
  */
 Loader.prototype.filterAllowedKeys = function(config) {
-  console.log(this.allowedKeys);
   return this.filterKeys(this.allowedKeys, config);
 };
 
