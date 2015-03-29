@@ -12,10 +12,14 @@ var Loader = function(params) {
   this.parseYaml = this.parseYaml.bind(this);
   this.add = this.add.bind(this);
   this.errorHandler = this.errorHandler.bind(this);
+  this.processConfigOptions = this.processConfigOptions.bind(this);
+  this.filterAllowedKeys = this.filterAllowedKeys.bind(this);
   this.context = {};
   this.loads = [];
   this.stopOnError = params.stopOnError;
   this.postFilters = params.postFilters || [];
+  // A running list of allowed keys, if specified only these will be allowed.
+  this.allowedKeys = [];
 };
 util.inherits(Loader, EventEmitter);
 
@@ -150,6 +154,7 @@ Loader.prototype.loadFileOrDirectory = function(path, options, done) {
  */
 Loader.prototype.filterKeys = function(keys, config) {
   var output = {};
+  var i = null;
   for (i in config) {
     if (keys.indexOf(i) !== -1) {
       output[i] = config[i];
@@ -157,6 +162,41 @@ Loader.prototype.filterKeys = function(keys, config) {
   }
   return output;
 };
+
+/**
+ * Allow only the collection of all whitelisted keys.
+ */
+Loader.prototype.filterAllowedKeys = function(config) {
+  console.log(this.allowedKeys);
+  return this.filterKeys(this.allowedKeys, config);
+};
+
+/**
+ * Add to the list of allowed keys.
+ */
+Loader.prototype.addAllowedKeys = function(keys) {
+  var i = null;
+  for (i in keys) {
+    if (this.allowedKeys.indexOf(i) === -1) {
+      this.allowedKeys.push(i);
+    }
+  }
+};
+
+Loader.prototype.processConfigOptions = function(options, config) {
+  if (!options) {
+    return;
+  }
+  if (options.filterKeys === true && config) {
+    this.postFilters.push(this.filterKeys.bind(this, Object.keys(config)));
+  }
+  if (options.allowedKeys === true && config) {
+    this.addAllowedKeys(config);
+    if (this.postFilters.indexOf(this.processConfigOptions) == -1) {
+      this.postFilters.push(this.filterAllowedKeys);
+    }
+  }
+}
 
 /**
  * Load configuration for an individual file.
@@ -173,9 +213,7 @@ Loader.prototype.loadFile = function(path, options, done) {
         /* istanbul ignore if: This error condition is near impossible to test. */
         if (error) return self.errorHandler(error, done);
         self.parseYaml(data, function(error, config) {
-          if (options && options.filterKeys === true && config) {
-            self.postFilters.push(self.filterKeys.bind(self, Object.keys(config)));
-          }
+          self.processConfigOptions(options, config);
           return done(error, { config: config, options: options });
         });
       });
@@ -229,6 +267,7 @@ Loader.prototype.filterYamlFiles = function(fileNames) {
  * A simple wrapper to be added to the async function list.
  */
 Loader.prototype.loadObject = function(object, options, context, done) {
+  this.processConfigOptions(options, object);
   return done(null, { config: object, options: options });
 };
 
