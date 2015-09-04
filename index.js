@@ -376,6 +376,7 @@ Loader.prototype.parseYaml = function(data, done) {
  * the second.
  */
 Loader.prototype.mergeConifguration = function(one, two, options) {
+  options = options || {};
   var i = null;
   if (one instanceof Array) {
     for (i in two) {
@@ -385,7 +386,7 @@ Loader.prototype.mergeConifguration = function(one, two, options) {
   else {
     for (i in two) {
       if (two.hasOwnProperty(i)) {
-        var deepMerge = options && options.deepMerge && options.deepMerge.indexOf(i) !== -1;
+        var deepMerge = options.deepMerge && options.deepMerge.indexOf(i) !== -1;
         if (deepMerge) {
           if (one[i] instanceof Array) {
             var j = null;
@@ -401,7 +402,9 @@ Loader.prototype.mergeConifguration = function(one, two, options) {
           }
         }
         else {
-          one[i] = two[i];
+          if (two[i] !== undefined || (options.allowUndefined && options.allowUndefined == true)) {
+            one[i] = two[i];
+          }
         }
       }
     }
