@@ -15,6 +15,7 @@ var Loader = function(params) {
   this.processConfigOptions = this.processConfigOptions.bind(this);
   this.filterAllowedKeys = this.filterAllowedKeys.bind(this);
   this.context = {};
+  this.schema = {};
   this.loads = [];
   this.stopOnError = params.stopOnError;
   this.postFilters = params.postFilters || [];
@@ -35,6 +36,26 @@ Loader.prototype.errorHandler = function(error, done) {
   else {
     this.emit('error', error);
     done(null, { config: {} });
+  }
+};
+
+/**
+ * Set a schema that will be enforced by casting values passed in.
+ */
+Loader.prototype.setSchema = function(schema) {
+  return this.schema = this.mergeConifguration(this.schema, schema);
+};
+
+/**
+ * Applies the configured schema to the loaded configuration.
+ */
+Loader.prototype.applySchema = function(schema, configuration) {
+  var key = null;
+  for (key in schema) {
+    if (configuration.hasOwnProperty(key)) {
+      // The schema should be a hash of { key: Type }.
+      configuration[key] = schema[key](configuration[key]);
+    }
   }
 };
 
@@ -182,6 +203,9 @@ Loader.prototype.addAllowedKeys = function(keys) {
   }
 };
 
+/**
+ * Prepares loaded configuration based on options provided.
+ */
 Loader.prototype.processConfigOptions = function(options, config) {
   if (!options) {
     return;
@@ -195,7 +219,8 @@ Loader.prototype.processConfigOptions = function(options, config) {
       this.postFilters.push(this.filterAllowedKeys);
     }
   }
-}
+  this.applySchema(this.schema, config);
+};
 
 /**
  * Load configuration for an individual file.
@@ -248,7 +273,7 @@ Loader.prototype.loadDirectory = function(dirPath, options, done) {
 };
 
 /**
- *
+ * Filters an array of filenames to only those of .yaml or .yml extensions.
  *
  * @param fileNames
  *    An array of fileNames.
