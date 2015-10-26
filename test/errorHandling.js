@@ -16,6 +16,18 @@ describe('yaml-config-loader', function() {
         should.not.exist(error);
       });
     });
+    it('should emit an error if a non-existant directory is added', function(done) {
+      var loader = new Loader({ stopOnError: false });
+      loader.addDirectory('no-file');
+      loader.on('error', function(error) {
+        should.exist(error);
+        error.message.should.equal('ENOENT: no such file or directory, scandir \'no-file\'');
+        done();
+      });
+      loader.load(function(error, config) {
+        should.not.exist(error);
+      });
+    });
   });
 });
  

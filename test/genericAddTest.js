@@ -28,7 +28,7 @@ describe('yaml-config-loader', function() {
       loader.add('invalid-path');
       loader.load(function(error, config) {
         should.exist(error);
-        error.message.should.equal('ENOENT: no such file or directory, stat \'invalid-path\'');
+        error.message.should.containEql('ENOENT');
         done();
       });
     });
