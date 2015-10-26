@@ -275,10 +275,6 @@ Loader.prototype.processConfigOptions = function(options, config) {
  * Load configuration for an individual file.
  */
 Loader.prototype.loadFile = function(path, options, done) {
-  if (!done) {
-    done = options;
-    options = false;
-  }
   var self = this;
   fs.exists(path, function(exists) {
     if (exists) {
@@ -292,7 +288,8 @@ Loader.prototype.loadFile = function(path, options, done) {
       });
     }
     else {
-      done(new Error(util.format('Specified configuration file `%s` not found.', path)));
+      var error = new Error(util.format('Specified configuration file `%s` not found.', path))
+      self.errorHandler(error, done);
     }
   });
 };
@@ -361,15 +358,17 @@ Loader.prototype.loadDirectoryArray = function(dirPath, configKey, options, done
     async.map(files, fileLoadHandler, function(error, confs) {
       /* istanbul ignore if: This error condition is near impossible to test. */
       if (error) return self.errorHandler(error, done);
+      var errors = [];
       for (i in confs) {
         try {
           var conf = yaml.safeLoad(confs[i]);
           output[configKey].push(conf);
         }
         catch(error) {
-          self.emit('error', error);
+          errors.push(error);
         }
       }
+      if (errors.length) return self.errorHandler(errors[0], done);
       done(null, { config: output, options: options });
     });
   });
