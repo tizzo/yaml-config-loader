@@ -21,7 +21,7 @@ describe('yaml-config-loader', function() {
       loader.addDirectory('no-file');
       loader.on('error', function(error) {
         should.exist(error);
-        error.message.should.equal('ENOENT: no such file or directory, scandir \'no-file\'');
+        error.message.should.containEql('ENOENT');
         done();
       });
       loader.load(function(error, config) {
