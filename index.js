@@ -300,7 +300,6 @@ Loader.prototype.loadFile = function(path, options, done) {
 Loader.prototype.loadDirectory = function(dirPath, options, done) {
   var self = this;
   fs.readdir(dirPath, function(error, files) {
-    /* istanbul ignore if: This error condition is near impossible to test. */
     if (error) return self.errorHandler(error, done);
     files = self.filterYamlFiles(files);
     var loadFile = function(filePath, cb) {
@@ -347,7 +346,6 @@ Loader.prototype.loadObject = function(object, options, context, done) {
 Loader.prototype.loadDirectoryArray = function(dirPath, configKey, options, done) {
   var self = this;
   fs.readdir(dirPath, function(error, files) {
-    /* istanbul ignore if: This error condition is near impossible to test. */
     if (error) return self.errorHandler(error, done);
     var output = {};
     output[configKey] = [];
