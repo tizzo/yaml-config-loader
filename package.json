@@ -15,7 +15,7 @@
   "author": "Howard Tyson <howard@howardtyson.com>",
   "license": "GPL2+",
   "dependencies": {
-    "async": "^0.9.0",
+    "async": "^0.6.0",
     "js-yaml": "^3.2.1"
   },
   "devDependencies": {
