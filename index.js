@@ -450,33 +450,34 @@ Loader.prototype.parseYaml = function(data, done) {
  */
 Loader.prototype.mergeConifguration = function(one, two, options) {
   options = options || {};
-  var i = null;
+  var key = null;
   if (one instanceof Array) {
-    for (i in two) {
-      one.push(two[i]);
+    for (key in two) {
+      one.push(two[key]);
     }
   }
   else {
-    for (i in two) {
-      if (two.hasOwnProperty(i)) {
-        var deepMerge = options.deepMerge && options.deepMerge.indexOf(i) !== -1;
+    for (key in two) {
+      if (two.hasOwnProperty(key)) {
+        var deepMerge = options.deepMerge && options.deepMerge.indexOf(key) !== -1;
         if (deepMerge) {
-          if (one[i] instanceof Array) {
-            var j = null;
-            for (j in two[i]) {
-              one[i].push(two[i][j]);
+          if (one[key] instanceof Array) {
+            var i = null;
+            for (i in two[key]) {
+              one[key].push(two[key][i]);
             }
           }
-          else if (one && (typeof one[i] == typeof two[i])) {
-            one[i] = this.mergeConifguration(one[i], two[i]);
+          // Testing whether these are objects
+          else if (typeof one[key] == 'object' && (typeof one[key] == typeof two[key])) {
+            one[key] = this.mergeConifguration(one[key], two[key]);
           }
           else {
-            one[i] = two[i];
+            one[key] = two[key];
           }
         }
         else {
-          if (two[i] !== undefined || (options.allowUndefined && options.allowUndefined == true)) {
-            one[i] = two[i];
+          if (two[key] !== undefined || (options.allowUndefined && options.allowUndefined == true)) {
+            one[key] = two[key];
           }
         }
       }
