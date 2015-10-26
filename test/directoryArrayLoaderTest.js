@@ -24,11 +24,20 @@ describe('yaml-config-loader', function() {
   });
   describe('addDirectoryArray', function() {
     it('should throw an error if a non-existant directory is specified', function(done) {
-      var loader = new Loader({stopOnError: true});
+      var loader = new Loader();
       loader.addDirectoryArray(fixture('nonsense'));
       loader.load(function(error, config) {
         should.exist(error);
         error.message.should.containEql('ENOENT');
+        done();
+      });
+    });
+    it('should throw an error if an invalid yaml file is parsed', function(done) {
+      var loader = new Loader();
+      loader.addDirectoryArray(path.join(__dirname, 'fixtures', 'fileLoader'));
+      loader.load(function(error, config) {
+        should.exist(error);
+        error.message.should.containEql('missed comma between flow collection entries at line 2, column 3:');
         done();
       });
     });
