@@ -53,8 +53,94 @@ Yet another configuration loader because I too am opinionated about how this sho
 
 ```
 
+## Cosntructor Options
+
+  - `stopOnErrors` This libraries defaults to fast failures where any error will
+    cause the callback to be called with an error, this behavior can be suspend
+    so that an `error` event is emitted on error instead so that you can handle
+    errors as desired and allow the module to continue in a best effort approach.
+
 ## Options
 
 Add methods may contain options, these include:
 
-  - `filterKeys` whether to limit the final config output to keys present in this configuration object.
+  - `allowedKeys` If specified the keys resulting from this load operation will be included in the final config object and any keys left unspecified will not.
+
+
+## Advanced usage
+
+Some additional conifguration parameters and loader options are available to
+further customize the experience.
+
+
+### Key Re-mapping with Nested Values
+
+If you are importing conifguration from environment variables but want that
+configuration to be nested key remapping can be used to rename the values
+and even to set these values inside of sub-objects. This is useful for mapping
+environment variables like `DATABASE_HOST` to a resulting structure like
+`{ database: { host: 'localhost', port: 3306 } }`.
+
+```` javascript
+loader.addMapping({
+  fooBarBaz: 'foo.bar.baz',
+  fizzBuzz: 'buzzFizz'
+});
+loader.addAndNormalizeObject({ 'fooBarBaz': 123 })
+loader.load(function(error, config) {
+  console.log(config); // { foo: { bar: { baz: 123 } } }
+});
+````
+
+### Deep Merges
+
+By default the loader treats all objects as one level deep and keys containing
+objects are not merged. This setting allows you to inform the loader that
+a key should be merged with, rather than replaced by, a subsequent object passed
+in a later configuration.
+
+```` javascript
+loader.add({ foo: { bar: 1 } });
+loader.add({ foo: { baz: 2 } }, { deepMerge: [ 'foo' ] })
+loader.load(function(error, config) {
+  console.log(config); // { foo: { bar: 1, baz: 2 } } }
+});
+````
+
+### Key Filtering
+
+If you have a set of allowed keys you can tell the loader that a given object's
+keys are trusted and should definitely be allowed, this will create or add to a
+running list of all allowed keys and any key not set in this list will not be
+allowed in the final output. Very useful for filtering out extraneous keys from
+process.env.
+
+```` javascript
+loader.add({ foo: 1, bar: 2 });
+loader.add({ bar: 3 }, { allowedKeys: true })
+loader.load(function(error, config) {
+  console.log(config); // { bar: 3 }
+});
+````
+
+### Post Filters
+
+If you would like to insert some logic to perform filtering on the final object
+before it is returned, you may pass in an array of synchronous filters that may
+act on the object before it is finally returned by the yaml-config-loader.
+
+```` javascript
+var loader = new Loader({
+  postFilters: [
+   function(config) {
+     config.baz = 'bot';
+     return config;
+   }
+  ]
+});
+loader.add({ foo: 'bar' });
+loader.load(function(error, config) {
+  console.log(config); // { foo: 'bar', baz: 'bot' }
+});
+````
+
