@@ -193,6 +193,9 @@ Loader.prototype.load = function(done) {
         config = self.postFilters[i](config);
       }
     }
+    if (self.allowedKeys.length > 0) {
+      config = self.filterAllowedKeys(config);
+    }
     done(error, config);
   });
 };
@@ -218,10 +221,10 @@ Loader.prototype.loadFileOrDirectory = function(path, options, done) {
  */
 Loader.prototype.filterKeys = function(keys, config) {
   var output = {};
-  var i = null;
-  for (i in config) {
-    if (keys.indexOf(i) !== -1) {
-      output[i] = config[i];
+  var key = null;
+  for (key in config) {
+    if (keys.indexOf(key) !== -1) {
+      output[key] = config[key];
     }
   }
   return output;
@@ -263,14 +266,8 @@ Loader.prototype.processConfigOptions = function(options, config) {
   if (!options) {
     return;
   }
-  if (options.filterKeys === true && config) {
-    this.postFilters.push(this.filterKeys.bind(this, Object.keys(config)));
-  }
   if (options.allowedKeys === true && config) {
     this.addAllowedKeys(config);
-    if (this.postFilters.indexOf(this.processConfigOptions) == -1) {
-      this.postFilters.push(this.filterAllowedKeys);
-    }
   }
 };
 
