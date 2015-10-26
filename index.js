@@ -16,6 +16,7 @@ var Loader = function(options) {
   this.filterAllowedKeys = this.filterAllowedKeys.bind(this);
   this.context = {};
   this.schema = {};
+  this.mapping = {};
   this.loads = [];
   this.stopOnError = options.stopOnError !== undefined ? options.stopOnError : true;
   this.postFilters = options.postFilters || [];
@@ -57,6 +58,47 @@ Loader.prototype.applySchema = function(schema, configuration) {
       configuration[key] = schema[key](configuration[key]);
     }
   }
+};
+
+/**
+ * Appends a set of mapping rules to map keys to configuration objects.
+ */
+Loader.prototype.setMapping = function(mapping) {
+  this.mapping = this.mergeConifguration(this.mapping, mapping);
+};
+
+/**
+ * Remaps the set of configuration through configured remapping rules.
+ *
+ * @param mapping {object} A hash
+ */
+Loader.prototype.applyMapping = function(mapping, configuration) {
+  var source = null;
+  for (source in mapping) {
+    if (configuration.hasOwnProperty(source)) {
+      var destination = mapping[source];
+      // The mapping should be a hash of { sourceKey: destinationKey }.
+      this.setKeyFromMapping(destination, configuration[source], configuration);
+      delete configuration[source];
+    }
+  }
+};
+
+/**
+ *
+ */
+Loader.prototype.setKeyFromMapping = function(destinationKey, value, config) {
+  var path = destinationKey.split('.');
+  var depth = path.length;
+  var localConfigReference = config
+  for (i = 0 ; i < depth - 1 ; i++) {
+    var key = path[i];
+    if (!localConfigReference[key]) {
+      localConfigReference[key] = {}
+    }
+    localConfigReference = localConfigReference[key];
+  }
+  localConfigReference[path[depth - 1]] = value;
 };
 
 /**
@@ -127,6 +169,7 @@ Loader.prototype.addObject = function(object, options) {
  */
 Loader.prototype.addAndNormalizeObject = function(object, format, options) {
   format = format || 'camelCase';
+  this.performTransformations(options, object);
   this.loads.push(this.loadObject.bind(this, this.translateKeyFormat(object, format), options, this.context));
   return this;
 };
@@ -204,6 +247,16 @@ Loader.prototype.addAllowedKeys = function(keys) {
 };
 
 /**
+ * Perform any transformations necessary based on the options and global configuration.
+ */
+Loader.prototype.performTransformations = function(options, config) {
+  this.processConfigOptions(options, config);
+  this.applySchema(this.schema, config);
+  this.applyMapping(this.mapping, config);
+};
+
+
+/**
  * Prepares loaded configuration based on options provided.
  */
 Loader.prototype.processConfigOptions = function(options, config) {
@@ -219,7 +272,6 @@ Loader.prototype.processConfigOptions = function(options, config) {
       this.postFilters.push(this.filterAllowedKeys);
     }
   }
-  this.applySchema(this.schema, config);
 };
 
 /**
@@ -237,7 +289,7 @@ Loader.prototype.loadFile = function(path, options, done) {
         /* istanbul ignore if: This error condition is near impossible to test. */
         if (error) return self.errorHandler(error, done);
         self.parseYaml(data, function(error, config) {
-          self.processConfigOptions(options, config);
+          self.performTransformations(options, config);
           return done(error, { config: config, options: options });
         });
       });
@@ -291,7 +343,7 @@ Loader.prototype.filterYamlFiles = function(fileNames) {
  * A simple wrapper to be added to the async function list.
  */
 Loader.prototype.loadObject = function(object, options, context, done) {
-  this.processConfigOptions(options, object);
+  this.performTransformations(options, object);
   return done(null, { config: object, options: options });
 };
 
