@@ -43,7 +43,7 @@ Loader.prototype.errorHandler = function(error, done) {
 /**
  * Set a schema that will be enforced by casting values passed in.
  */
-Loader.prototype.setSchema = function(schema) {
+Loader.prototype.addSchema = function(schema) {
   return this.schema = this.mergeConifguration(this.schema, schema);
 };
 
@@ -63,7 +63,7 @@ Loader.prototype.applySchema = function(schema, configuration) {
 /**
  * Appends a set of mapping rules to map keys to configuration objects.
  */
-Loader.prototype.setMapping = function(mapping) {
+Loader.prototype.addMapping = function(mapping) {
   this.mapping = this.mergeConifguration(this.mapping, mapping);
 };
 

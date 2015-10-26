@@ -10,7 +10,7 @@ describe('yaml-config-loader', function() {
       loader.add({ someInt: '3' });
       loader.load(function(error, conf) {
         conf.someInt.should.be.exactly('3').and.be.a.String();
-        loader.setSchema({
+        loader.addSchema({
           someConf: String,
           someInt: Number,
         });
