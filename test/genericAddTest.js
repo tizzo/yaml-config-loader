@@ -23,6 +23,15 @@ describe('yaml-config-loader', function() {
         done(error);
       });
     });
+    it('should throw an error if a non-existant file is specified', function(done) {
+      var loader = new Loader();
+      loader.add('invalid-path');
+      loader.load(function(error, config) {
+        should.exist(error);
+        error.message.should.equal('ENOENT: no such file or directory, stat \'invalid-path\'');
+        done();
+      });
+    });
   });
 });
 
