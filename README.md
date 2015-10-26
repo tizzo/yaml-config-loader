@@ -44,8 +44,8 @@ Yet another configuration loader because I too am opinionated about how this sho
   loader.addFile(path.resolve(path.join('~', '.myapp.yaml')));
   // Override configuration from environment variables where a config value of `someConf`
   // maps to an environment variable of `SOME_CONF`.
-  loader.addAndStandardizeObject(process.env);
-  loader.addAndStandardizeObject(argv);
+  loader.addAndNormalizeObject(process.env);
+  loader.addAndNormalizeObject(argv);
   loader.load(function(error, config) {
     // Print the resulting configuration.
     console.log(config);
