@@ -6,8 +6,8 @@ var async = require('async');
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 
-var Loader = function(params) {
-  params = params || {};
+var Loader = function(options) {
+  options = options || {};
   this.load = this.load.bind(this);
   this.parseYaml = this.parseYaml.bind(this);
   this.add = this.add.bind(this);
@@ -17,8 +17,8 @@ var Loader = function(params) {
   this.context = {};
   this.schema = {};
   this.loads = [];
-  this.stopOnError = params.stopOnError;
-  this.postFilters = params.postFilters || [];
+  this.stopOnError = options.stopOnError !== undefined ? options.stopOnError : true;
+  this.postFilters = options.postFilters || [];
   // A running list of allowed keys, if specified only these will be allowed.
   this.allowedKeys = [];
 };
