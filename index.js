@@ -282,6 +282,7 @@ Loader.prototype.loadFile = function(path, options, done) {
         /* istanbul ignore if: This error condition is near impossible to test. */
         if (error) return self.errorHandler(error, done);
         self.parseYaml(data, function(error, config) {
+          if (error) return self.errorHandler(error, done)
           self.performTransformations(options, config);
           return done(error, { config: config, options: options });
         });
