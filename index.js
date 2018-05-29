@@ -266,6 +266,21 @@ Loader.prototype.processConfigOptions = function(options, config) {
   if (!options) {
     return;
   }
+  if (options.underscoreNesting === true && config) {
+    var key = null;
+    for (key in config) {
+      if (key.includes('__') && config.hasOwnProperty(key)) {
+        const self = this;
+        this.mapping[key] = key
+          .replace('__', '.')
+          .split('.')
+          .map(function (key) {
+            return self.translateIndividualKeyFormat(key, 'camelCase');
+          })
+          .join('.');
+      }
+    }
+  }
   if (options.allowedKeys === true && config) {
     this.addAllowedKeys(config);
   }
@@ -387,35 +402,40 @@ Loader.prototype.loadDirectoryArray = function(dirPath, configKey, options, done
  *      'lower-dashes' - all lower case with dashes, typical of cli parameters.
  */
 Loader.prototype.translateKeyFormat = function(object, format) {
-  var output = {};
+  const output = {};
   format = format || 'camelCase';
-  for (key in object) {
-    if (object.hasOwnProperty(key)) {
-      var parts = key
-        .split(/([A-Z][a-z]+)|_|-/g)
-        .filter(function(element) {
-          return element;
-        })
-        .map(function(item) {
-          return item.toLowerCase();
-        });
-      var newKey = '';
-      switch (format) {
-        case 'camelCase':
-          newKey = this.formatCamelCase(parts);
-          break;
-        case 'CAPITAL_UNDERSCORES':
-          newKey = parts.join('_').toUpperCase();
-          break;
-        case 'lower-dashes':
-          newKey = parts.join('-').toLowerCase();
-          break;
-      }
-      output[newKey] = object[key];
-    }
-  }
+  Object.keys(object).forEach(key => {
+    output[this.translateIndividualKeyFormat(key, format)] = object[key];
+  });
   return output;
 };
+
+Loader.prototype.translateIndividualKeyFormat = function(key, format) {
+  var parts = key
+    .split(/([A-Z][a-z]+)|_|-/g)
+    .filter(function(element) {
+      return element;
+    })
+    .map(function(item) {
+      return item.toLowerCase();
+    });
+  var newKey = '';
+  switch (format) {
+    case 'camelCase':
+      return this.formatCamelCase(parts);
+      break;
+    case 'CAPITAL_UNDERSCORES':
+      return parts.join('_').toUpperCase();
+      break;
+    case 'lower-dashes':
+      return parts.join('-').toLowerCase();
+      break;
+    default:
+      throw new Error(`Format: ${format} undefined`);
+  }
+
+}
+
 
 /**
  * Utility function to format an array of word parts in camelCase.

@@ -72,6 +72,40 @@ Add methods may contain options, these include:
 Some additional conifguration parameters and loader options are available to
 further customize the experience.
 
+### Mapping a flat namespace to a structured one (for environment variables)
+
+If you are importing configuration from environment variables you can either
+perform key re-mapping as listed in the next section or you can use double
+underscores to specify hierarchy (i.e. `FOO__BAR`) by using the `underscoreNesting` option.
+
+This means you could remap something like:
+
+``` json
+{
+  "serverConfig": {
+    "port": 9999,
+    "host": "localhost"
+  }
+}
+```
+
+Like so:
+
+``` bash
+SERVER_CONFIG__PORT=9999
+SERVER_CONFIG__HOST=localhost
+```
+
+By doing the following:
+
+``` javascript
+loader.add('./some/file.yaml');
+loader.addAndNormalizeObject(process.env, {underscoreNesting: true})
+loader.load(function(error, config) {
+  console.log(config); // { foo: { bar: { baz: 123 } } }
+});
+```
+
 
 ### Key Re-mapping with Nested Values
 
